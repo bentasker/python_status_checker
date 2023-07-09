@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 #
-# pip install requests httpx[http2]
+# pip install requests httpx[http2] prefect
 #
 import httpx
 import requests
 import time
 
+from prefect import flow, task, get_run_logger
 from requests.adapters import HTTPAdapter
 
 
@@ -39,13 +40,23 @@ def get_request_headers():
     '''
     return {}
 
+def do_log(check, message, level="info"):
+    ''' Write out a log line
+    '''
+    logger = get_run_logger()
+    if level == "warn":
+        logger.warn(f"{check}: {message}")
+    else:
+        logger.info(f"{check}: {message}")
 
+@task
 def do_h1_check(url):
     ''' Send a HTTP/1.1 probe to the URL and record specifics about it
     '''
     url_result = get_check_dict(url)
     headers = get_request_headers()
     failed = False
+    do_log("http1", f"Starting HTTP/1.1 check for {url}")
     
     try:
         # We don't want any retries - it should fail first time 
@@ -64,10 +75,17 @@ def do_h1_check(url):
         # the cause of the failure
         stop = time.time_ns()
         url_result["failure_reason"] = match_exception_string(str(e).lower())
+        do_log("http1", f"HTTP/1.1 check for {url} resulted in exception: {e}", "warn")
         failed = True
     
-    return process_result(res, url_result, failed, start, stop)
-
+    result = process_result(res, url_result, failed, start, stop)
+    
+    if result['status'] == 1:
+        do_log("http1", f"{url} is UP")
+    else:
+        do_log("http1", f"{url} is DOWN. Reason {result['failure_reason']}")
+        
+    return result
     
 def process_result(res, url_result, failed, start, stop):
     ''' Populate the result dict 
@@ -105,7 +123,7 @@ def process_result(res, url_result, failed, start, stop):
     
     return url_result
     
-    
+@task    
 def do_h2_check(url):
     ''' Send a HTTP/2 probe to the URL and build
     a results dict
@@ -114,6 +132,7 @@ def do_h2_check(url):
     headers = get_request_headers()
     failed = False
     url_result["http_version"] = "2"
+    do_log("http2", f"Starting HTTP/2 check for {url}")    
     
     try:
         start = time.time_ns()
@@ -123,6 +142,7 @@ def do_h2_check(url):
     except Exception as e:
         stop = time.time_ns()
         url_result["failure_reason"] = match_exception_string(str(e).lower())
+        do_log("http2", f"HTTP/2 check for {url} resulted in exception: {e}", "warn")        
         failed = True
         # If we failed to connect, res won't exist
         # prevent exceptions
@@ -135,9 +155,18 @@ def do_h2_check(url):
         url_result["failure_reason"] = "not-http2"
         failed = True
         
-    return process_result(res, url_result, failed, start, stop)    
-        
+    result = process_result(res, url_result, failed, start, stop)
     
+    if result['status'] == 1:
+        do_log("http2", f"{url} is UP")
+    else:
+        do_log("http2", f"{url} is DOWN. Reason {result['failure_reason']}")
+        
+    return result
+
+
+        
+@flow    
 def main(check_urls):
     ''' Main entry point
     
