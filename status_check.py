@@ -9,12 +9,18 @@ import time
 from requests.adapters import HTTPAdapter
 
 
+# Define the URLs to check and the protocols that should be checked
 urls = [
    { "url": "https://mastodon.bentasker.co.uk/", "check" : ["h1"] },
    { "url": "https://www.bentasker.co.uk/", "check" : ["h1", "h2"] }
 ]
 
+
 def get_check_dict(url):
+    ''' Generate the dict used to record HTTP probe
+        responses
+        
+    '''
     return {
         "url" : url,
         "http_version" : "1.1",
@@ -25,8 +31,14 @@ def get_check_dict(url):
         "bytes_transferred" : 0
     } 
 
+
 def get_request_headers():
+    ''' Return a dict of request headers to pass into a request
+    
+    TODO: Set the user-agent
+    '''
     return {}
+
 
 def do_h1_check(url):
     ''' Send a HTTP/1.1 probe to the URL and record specifics about it
@@ -35,6 +47,7 @@ def do_h1_check(url):
     url_result = get_check_dict(url)
     headers = get_request_headers()
     failed = False
+    
     try:
         # We don't want any retries - it should fail first time 
         #
@@ -48,6 +61,8 @@ def do_h1_check(url):
         stop = time.time_ns()
 
     except Exception as e:
+        # Trap exceptions and attempt to provide a normalised string identifying
+        # the cause of the failure
         stop = time.time_ns()
         url_result["failure_reason"] = match_exception_string(str(e).lower())
         failed = True
@@ -88,6 +103,9 @@ def process_result(res, url_result, failed, start, stop):
     
     
 def do_h2_check(url):
+    ''' Send a HTTP/2 probe to the URL and build
+    a results dict
+    '''
     url_result = get_check_dict(url)
     headers = get_request_headers()
     failed = False
@@ -117,7 +135,11 @@ def do_h2_check(url):
         
     
 def main(check_urls):
-    # iterate through the urls
+    ''' Main entry point
+    
+    Iterate through the configured URLs and send configured probes
+    '''
+    
     for url in check_urls:
         if "h1" in url['check']:
             http1_result = do_h1_check(url['url'])
@@ -151,4 +173,3 @@ def match_exception_string(s):
 
 if __name__ == "__main__":
     main(urls)
-
