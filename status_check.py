@@ -17,6 +17,8 @@ urls = [
 ]
 
 
+VERSION = "0.1"
+
 def get_check_dict(url):
     ''' Generate the dict used to record HTTP probe
         responses
@@ -36,9 +38,8 @@ def get_check_dict(url):
 def get_request_headers():
     ''' Return a dict of request headers to pass into a request
     
-    TODO: Set the user-agent
     '''
-    return {}
+    return {"User-agent": f"Ben's status-checker {VERSION}" }
 
 def do_log(check, message, level="info"):
     ''' Write out a log line
@@ -136,7 +137,7 @@ def do_h2_check(url):
     
     try:
         start = time.time_ns()
-        client = httpx.Client(http2=True)
+        client = httpx.Client(http2=True, headers=headers)
         res = client.get(url)
         stop = time.time_ns()
     except Exception as e:
