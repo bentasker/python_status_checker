@@ -43,7 +43,6 @@ def get_request_headers():
 def do_h1_check(url):
     ''' Send a HTTP/1.1 probe to the URL and record specifics about it
     '''
-
     url_result = get_check_dict(url)
     headers = get_request_headers()
     failed = False
@@ -85,9 +84,15 @@ def process_result(res, url_result, failed, start, stop):
     if failed:
         return url_result
     
-    # Otherwise, update status code and response body size etc
+    # Record the status code and check whether it indicates success
     url_result['status_code'] = res.status_code
+    if res.status_code < 200 or res.status_code >= 300:
+        url_result['status'] = 0
+        url_result["failure_reason"] = "status-code"
+    else:
+        url_result['status'] = 1
     
+    # Extract or calculate response body length
     if "Content-Length" in res.headers:
         url_result['bytes_transferred'] = int(res.headers["Content-Length"])
     else:
@@ -98,7 +103,6 @@ def process_result(res, url_result, failed, start, stop):
         # for consistency between responses
         url_result['bytes_transferred'] = len(res.text)
     
-    url_result['status'] = 1
     return url_result
     
     
