@@ -15,7 +15,7 @@ from requests.adapters import HTTPAdapter
 
 # Define the URLs to check and the protocols that should be checked
 urls = [
-   { "url": "https://mastodon.bentasker.co.uk/", "check" : ["h1"] },
+   { "url": "https://mastodon.bentasker.co.uk/", "check" : ["h1", "h2"] },
    { "url": "https://www.bentasker.co.uk/", "check" : ["h1", "h2"] }
 ]
 
