@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 #
-# pip install requests httpx[http2] prefect
+# pip install requests httpx[http2] prefect influxdb-client
 #
 import httpx
 import requests
+import sys
 import time
 
+from influxdb_client import InfluxDBClient, Point
+from influxdb_client.client.write_api import SYNCHRONOUS
 from prefect import flow, task, get_run_logger
 from requests.adapters import HTTPAdapter
 
@@ -191,7 +194,45 @@ def main(check_urls):
         res.append(prefectfuture.result())
     
     print(res)
-
+    if len(res) < 1:
+        return
+    
+    # Otherwise, time to write the stats out
+    token = sys.argv[1]
+    bucket = sys.argv[2]
+    influx_url = sys.argv[3]
+    
+    client = InfluxDBClient(url=influx_url, token=token, org="")
+    write_api = client.write_api(write_options=SYNCHRONOUS)
+    
+    points = []
+    for r in res:
+        points.append(build_point(r))
+    
+    write_api.write(bucket, "", points)
+    
+    
+def build_point(rdict):
+    ''' Accept a result dict and turn it into an InfluxDB point
+    '''
+    p = Point("http_reachability_check")
+    p.tag("http_version", rdict['http_version'])
+    p.tag("url", rdict['url'])
+    p.tag("failure_reason", rdict['failure_reason'])
+    
+    if rdict["status"] == 0:
+        p.tag("result", "failed")
+    else:
+        p.tag("result", "success")
+        
+    p.field("probe_status", rdict["status"])
+    p.field("request_duration", rdict["request_duration_ns"])
+    p.field("http_status", rdict["status_code"])
+    p.field("bytes_transferred", rdict["bytes_transferred"])
+    
+    p.time(rdict['request_timestamp_ns'])
+    return p
+    
 
 def match_exception_string(s):
     ''' Take an exception string and check for certain 
