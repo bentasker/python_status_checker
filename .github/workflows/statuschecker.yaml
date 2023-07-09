@@ -28,4 +28,4 @@ jobs:
       - name: statuschecks
         run: |
           export PYTHONPATH="${PYTHONPATH}"
-          python status_check.py "${{secrets.INFLUXDB_TOKEN}}"
+          python status_check.py "${{secrets.INFLUXDB_TOKEN}}" "${{secrets.INFLUXDB_BUCKET}}" "${{secrets.INFLUXDB_URL}}"
