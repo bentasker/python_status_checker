@@ -2,9 +2,8 @@
 
 A Prefect flow designed to run HTTP/1 and HTTP/2 reachability checks against monitored URLs.
 
-Probe metrics are then written into InfluxDB for later consumption.
+Probe metrics are then written into InfluxDB for later consumption, ultimately, feeding in to [My Status Page](https://bentasker.github.io/status_page/)
 
-Ultimately, this will feed in to [My Status Page](https://bentasker.github.io/status_page/)
 
 ----
 
@@ -53,3 +52,8 @@ It's also necessary to populate secrets detailing how to communicate with your P
 - Create a secret called `PREFECT_API_KEY` and provide your Prefect API Key
 - Create another called `PREFECT_WORKSPACE` with the name of your workspace (which is `accountname/workspacename`)
 
+----
+
+### Copyright
+
+Copyright 2023, B Tasker. Released under [BSD 3 Clause](https://www.bentasker.co.uk/pages/licenses/bsd-3-clause.html).
