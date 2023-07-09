@@ -175,12 +175,21 @@ def main(check_urls):
     results = []
     for url in check_urls:
         if "h1" in url['check']:
-            results.append(do_h1_check(url['url']))
+            results.append(do_h1_check.submit(url['url']))
 
         if "h2" in url['check']:
-            results.append(do_h2_check(url['url']))
+            results.append(do_h2_check.submit(url['url']))
     
-    print(results)
+    # We ran tasks concurrently so results currently just contains
+    # a bunch of prefect futures
+    #
+    # We need to iterate through calling results() on each of them 
+    # to get the result dicts 
+    res = []
+    for prefectfuture in results:
+        res.append(prefectfuture.result())
+    
+    print(res)
 
 
 def match_exception_string(s):
