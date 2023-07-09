@@ -143,16 +143,16 @@ def main(check_urls):
     
     Iterate through the configured URLs and send configured probes
     '''
-    
+    results = []
     for url in check_urls:
         if "h1" in url['check']:
-            http1_result = do_h1_check(url['url'])
-            print(http1_result)
+            results.append(do_h1_check(url['url']))
 
         if "h2" in url['check']:
-            http2_result = do_h2_check(url['url'])
-            print(http2_result)
-            
+            results.append(do_h2_check(url['url']))
+    
+    print(results)
+
 
 def match_exception_string(s):
     ''' Take an exception string and check for certain 
