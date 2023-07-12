@@ -92,6 +92,21 @@ def do_log(check, message, level="info"):
     else:
         logger.info(f"{check}: {message}")
 
+
+def sendEvent(check, state, url, result):
+    
+    slugify_url = re.sub(r'\W+', '-', url)
+        emit_event(
+                event=f"{check}.status.{state}", 
+                resource={"prefect.resource.id": f"{check}.{slugify_url}"},
+                payload={
+                    "url" : url, 
+                    #"http_status" : result['status_code'],
+                    "http_status" : f"418 (real: {result['status_code']}",
+                    "reason" : f"I'm a teapot.... {result['failure_reason']}"
+                    }
+            )       
+
 @task
 def do_h1_check(url):
     ''' Send a HTTP/1.1 probe to the URL and record specifics about it
@@ -123,43 +138,17 @@ def do_h1_check(url):
     
     result = process_result(res, url_result, failed, start, stop)
     
-    slugify_url = re.sub(r'\W+', '-', url)
+    
     
     if result['status'] == 1:
         do_log("http1", f"{url} is UP")
-        '''
-        emit_event(
-                event=f"h1.status.UP", 
-                resource={"prefect.resource.id": f"h1.{slugify_url}"},
-                payload={"url" : url,
-                         "http_status" : result['status_code'],
-                         "reason" : ""
-                         }
-            )
-        '''
-        emit_event(
-                event=f"h1.status.DOWN", 
-                resource={"prefect.resource.id": f"h1.{slugify_url}"},
-                payload={
-                    "url" : url, 
-                    #"http_status" : result['status_code'],
-                    "http_status" : f"418 (real: {result['status_code']}",
-                    "reason" : f"I'm a teapot.... {result['failure_reason']}"
-                    }
-            )        
-                        
+        # Marking down to aid testing. TODO: change to UP
+        sendEvent("h1", "DOWN", url, result)
                 
     else:
         do_log("http1", f"{url} is DOWN. Reason {result['failure_reason']}")
-        emit_event(
-                event=f"h1.status.DOWN", 
-                resource={"prefect.resource.id": f"h1.{slugify_url}"},
-                payload={
-                    "url" : url, 
-                    "http_status" : result['status_code'],
-                    "reason" : result['failure_reason']
-                    }
-            )        
+        sendEvent("h1", "DOWN", url, result)        
+  
         
     return result
     
@@ -236,25 +225,10 @@ def do_h2_check(url):
     
     if result['status'] == 1:
         do_log("http2", f"{url} is UP")
-        emit_event(
-                event=f"h2.status.UP", 
-                resource={"prefect.resource.id": f"h1.{slugify_url}"},
-                payload={"url" : url,
-                         "http_status" : result['status_code'],
-                         "reason" : ""
-                         }
-            )        
+        sendEvent("h2", "UP", url, result)
     else:
         do_log("http2", f"{url} is DOWN. Reason {result['failure_reason']}")
-        emit_event(
-                event=f"h2.status.DOWN", 
-                resource={"prefect.resource.id": f"h1.{slugify_url}"},
-                payload={
-                    "url" : url, 
-                    "http_status" : result['status_code'],
-                    "reason" : result['failure_reason']
-                    }
-            )
+        sendEvent("h2", "DOWN", url, result)
 
     return result
 
