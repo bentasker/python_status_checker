@@ -127,6 +127,7 @@ def do_h1_check(url):
     
     if result['status'] == 1:
         do_log("http1", f"{url} is UP")
+        '''
         emit_event(
                 event=f"h1.status.UP", 
                 resource={"prefect.resource.id": f"h1.{slugify_url}"},
@@ -135,6 +136,19 @@ def do_h1_check(url):
                          "reason" : ""
                          }
             )
+        '''
+        emit_event(
+                event=f"h1.status.DOWN", 
+                resource={"prefect.resource.id": f"h1.{slugify_url}"},
+                payload={
+                    "url" : url, 
+                    #"http_status" : result['status_code'],
+                    "http_status" : f"418 (real: {result['status_code'])}",
+                    "reason" : f"I'm a teapot.... {result['failure_reason']}"
+                    }
+            )        
+                        
+                
     else:
         do_log("http1", f"{url} is DOWN. Reason {result['failure_reason']}")
         emit_event(
