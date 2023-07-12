@@ -143,7 +143,7 @@ def do_h1_check(url):
                 payload={
                     "url" : url, 
                     #"http_status" : result['status_code'],
-                    "http_status" : f"418 (real: {result['status_code'])}",
+                    "http_status" : f"418 (real: {result['status_code']}",
                     "reason" : f"I'm a teapot.... {result['failure_reason']}"
                     }
             )        
