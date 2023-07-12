@@ -94,18 +94,20 @@ def do_log(check, message, level="info"):
 
 
 def sendEvent(check, state, url, result):
+    ''' Send a Prefect event
     
+    '''
     slugify_url = re.sub(r'\W+', '-', url)
-        emit_event(
-                event=f"{check}.status.{state}", 
-                resource={"prefect.resource.id": f"{check}.{slugify_url}"},
-                payload={
-                    "url" : url, 
-                    #"http_status" : result['status_code'],
-                    "http_status" : f"418 (real: {result['status_code']}",
-                    "reason" : f"I'm a teapot.... {result['failure_reason']}"
-                    }
-            )       
+    emit_event(
+            event=f"{check}.status.{state}", 
+            resource={"prefect.resource.id": f"{check}.{slugify_url}"},
+            payload={
+                "url" : url, 
+                #"http_status" : result['status_code'],
+                "http_status" : f"418 (real: {result['status_code']}",
+                "reason" : f"I'm a teapot.... {result['failure_reason']}"
+                }
+        )       
 
 @task
 def do_h1_check(url):
