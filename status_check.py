@@ -233,7 +233,7 @@ def do_h2_check(url):
     else:
         do_log("http2", f"{url} is DOWN. Reason {result['failure_reason']}")
         emit_event(
-                event=f"h1.status.DOWN", 
+                event=f"h2.status.DOWN", 
                 resource={"prefect.resource.id": f"h1.{slugify_url}"},
                 payload={
                     "url" : url, 
