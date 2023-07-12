@@ -218,6 +218,7 @@ def do_h2_check(url):
         failed = True
         
     result = process_result(res, url_result, failed, start, stop)
+    slugify_url = re.sub(r'\W+', '-', url)
     
     if result['status'] == 1:
         do_log("http2", f"{url} is UP")
