@@ -1,15 +1,54 @@
 #!/usr/bin/env python3
 #
-# pip install requests httpx[http2] prefect influxdb-client
+# Prefect flow to perform HTTP reachability checks against URLs
+# Designed to be run from something like a Github Action
 #
+# Copyright (c) 2023, B Tasker
+# Released under BSD 3-Clause License
+#
+# pip install requests httpx[http2] prefect influxdb-client
+# ./status-check.py "$influx_token", "$influx_bucket", "$influx_url"
+#
+'''
+Copyright (c) 2023, B Tasker
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, are
+permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this list of
+conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or other materials
+provided with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its contributors may be used
+to endorse or promote products derived from this software without specific prior written
+permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
+EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
+TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+'''
+
 import httpx
 import requests
+import re
 import sys
 import time
 
 from influxdb_client import InfluxDBClient, Point
 from influxdb_client.client.write_api import SYNCHRONOUS
 from prefect import flow, task, get_run_logger
+from prefect.events import emit_event
 from requests.adapters import HTTPAdapter
 
 
@@ -84,10 +123,29 @@ def do_h1_check(url):
     
     result = process_result(res, url_result, failed, start, stop)
     
+    slugify_url = re.sub(r'\W+', '-', url)
+    
     if result['status'] == 1:
         do_log("http1", f"{url} is UP")
+        emit_event(
+                event=f"h1.status.UP", 
+                resource={"prefect.resource.id": f"h1.{slugify_url}"},
+                payload={"url" : url,
+                         "http_status" : result['status_code'],
+                         "reason" : ""
+                         }
+            )
     else:
         do_log("http1", f"{url} is DOWN. Reason {result['failure_reason']}")
+        emit_event(
+                event=f"h1.status.DOWN", 
+                resource={"prefect.resource.id": f"h1.{slugify_url}"},
+                payload={
+                    "url" : url, 
+                    "http_status" : result['status_code'],
+                    "reason" : result['failure_reason']
+                    }
+            )        
         
     return result
     
@@ -163,9 +221,26 @@ def do_h2_check(url):
     
     if result['status'] == 1:
         do_log("http2", f"{url} is UP")
+        emit_event(
+                event=f"h2.status.UP", 
+                resource={"prefect.resource.id": f"h1.{slugify_url}"},
+                payload={"url" : url,
+                         "http_status" : result['status_code'],
+                         "reason" : ""
+                         }
+            )        
     else:
         do_log("http2", f"{url} is DOWN. Reason {result['failure_reason']}")
-        
+        emit_event(
+                event=f"h1.status.DOWN", 
+                resource={"prefect.resource.id": f"h1.{slugify_url}"},
+                payload={
+                    "url" : url, 
+                    "http_status" : result['status_code'],
+                    "reason" : result['failure_reason']
+                    }
+            )
+
     return result
 
 
