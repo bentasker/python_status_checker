@@ -144,7 +144,7 @@ def do_h1_check(url):
     
     if result['status'] == 1:
         do_log("http1", f"{url} is UP")
-        sendEvent("h1", "DOWN", url, result)
+        sendEvent("h1", "UP", url, result)
                 
     else:
         do_log("http1", f"{url} is DOWN. Reason {result['failure_reason']}")
