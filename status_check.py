@@ -137,6 +137,7 @@ def do_h1_check(url):
         url_result["failure_reason"] = match_exception_string(str(e).lower())
         do_log("http1", f"HTTP/1.1 check for {url} resulted in exception: {e}", "warn")
         failed = True
+        res = False
     
     result = process_result(res, url_result, failed, start, stop)
     
