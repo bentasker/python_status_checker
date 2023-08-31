@@ -20,10 +20,10 @@ jobs:
         run: |
           pip install -U prefect==2.* influxdb-client requests httpx[http2]
 
-      - name: Prefect Cloud login
-        run: |
-          prefect config set PREFECT_API_KEY=${{secrets.PREFECT_API_KEY}}
-          prefect cloud workspace set --workspace "${{secrets.PREFECT_WORKSPACE}}"
+#      - name: Prefect Cloud login
+#        run: |
+#          prefect config set PREFECT_API_KEY=${{secrets.PREFECT_API_KEY}}
+#          prefect cloud workspace set --workspace "${{secrets.PREFECT_WORKSPACE}}"
 
       - name: statuschecks
         run: |
