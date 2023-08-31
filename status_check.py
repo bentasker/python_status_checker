@@ -40,6 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 '''
 
 import httpx
+import logging
 import requests
 import re
 import sys
@@ -47,8 +48,8 @@ import time
 
 from influxdb_client import InfluxDBClient, Point
 from influxdb_client.client.write_api import SYNCHRONOUS
-from prefect import flow, task, get_run_logger
-from prefect.events import emit_event
+#from prefect import flow, task, get_run_logger
+#from prefect.events import emit_event
 from requests.adapters import HTTPAdapter
 
 
@@ -86,7 +87,8 @@ def get_request_headers():
 def do_log(check, message, level="info"):
     ''' Write out a log line
     '''
-    logger = get_run_logger()
+    #logger = get_run_logger()
+    logger = logging
     if level == "warn":
         logger.warn(f"{check}: {message}")
     else:
@@ -109,7 +111,11 @@ def sendEvent(check, state, url, result):
                 }
         )       
 
-@task
+def emit_event(event, resource, payload):
+    print(f"{event}: {resource} {payload}")
+    
+
+#@task
 def do_h1_check(url):
     ''' Send a HTTP/1.1 probe to the URL and record specifics about it
     '''
@@ -190,7 +196,7 @@ def process_result(res, url_result, failed, start, stop):
     
     return url_result
     
-@task    
+#@task    
 def do_h2_check(url):
     ''' Send a HTTP/2 probe to the URL and build
     a results dict
@@ -236,28 +242,29 @@ def do_h2_check(url):
 
 
         
-@flow    
+#@flow    
 def main(check_urls):
     ''' Main entry point
     
     Iterate through the configured URLs and send configured probes
     '''
     results = []
+    res = []
     for url in check_urls:
         if "h1" in url['check']:
-            results.append(do_h1_check.submit(url['url']))
+            res.append(do_h1_check(url['url']))
 
         if "h2" in url['check']:
-            results.append(do_h2_check.submit(url['url']))
+            res.append(do_h2_check(url['url']))
     
     # We ran tasks concurrently so results currently just contains
     # a bunch of prefect futures
     #
     # We need to iterate through calling results() on each of them 
     # to get the result dicts 
-    res = []
-    for prefectfuture in results:
-        res.append(prefectfuture.result())
+
+    #for prefectfuture in results:
+    #    res.append(prefectfuture.result())
     
     print(res)
     if len(res) < 1:
