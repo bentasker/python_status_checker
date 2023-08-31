@@ -18,7 +18,7 @@ jobs:
 
       - name: Python dependencies
         run: |
-          pip install -U prefect==2.* influxdb-client requests httpx[http2]
+          pip install -U influxdb-client requests httpx[http2]
 
 #      - name: Prefect Cloud login
 #        run: |
